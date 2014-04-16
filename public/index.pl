@@ -7,26 +7,21 @@ use CGI;
 use Data::Dumper;
 use URI::Escape;
 
-use DimagiCGI;
-use DimagiData;
+use WhereIsCGI;
+use WhereIsData;
 
-my $dbh = DimagiData::dbh;
+my $dbh = WhereIsData::dbh;
 
 # Data related to current user
-my $request = DimagiCGI::request_data;
+my $request = WhereIsCGI::request_data;
 my $name = $request->{NAME};
 my $query = $request->{QUERY};
 my ($url, $data);
 my ($location, $person);
 my @errors;
 if ($query) {
-	# Dysfunctional: "Please add a username to each call in order for geonames to be able to identify the calling application and count the credits usage."
-	# ...but there's a username	
-	$url = 'http://api.geonames.org/searchJSON?maxRows=3&username=dimagi&name=' . uri_escape($query);
-	$data = `curl $url`;
-
-	$person = DimagiData::person_by_name($dbh, $name);
-	$location = DimagiData::location_by_query($dbh, $query);
+	$person = WhereIsData::person_by_name($dbh, $name);
+	$location = WhereIsData::location_by_query($dbh, $query);
 
 	if (!$person->{ID}) {
 		push(@errors, "Could not find you, $name.");
@@ -39,7 +34,7 @@ if ($query) {
 		$name = $person->{NAME};
 		if ($location->{ID}) {
 			$query = $location->{NAME};
-			DimagiData::add_person_location($dbh, {
+			WhereIsData::add_person_location($dbh, {
 				PERSONID => $person->{ID},
 				LOCATIONID => $location->{ID},
 			});
@@ -48,7 +43,7 @@ if ($query) {
 }
 
 # Data for all users
-my @personlocations = DimagiData::person_locations($dbh);
+my @personlocations = WhereIsData::person_locations($dbh);
 
 my $cgi = CGI->new;
 print $cgi->header();
@@ -58,7 +53,7 @@ print qq{
 	<html>
 
 		<head>
-			<link rel="stylesheet" type="text/css" href="dimagi.css">
+			<link rel="stylesheet" type="text/css" href="WhereIs.css">
 			<script type="text/javascript">
 				window.onload = function() {
 					document.getElementById("name").focus();
@@ -85,7 +80,7 @@ print sprintf(qq{
 		<input type="text" name="query" value="%s" />
 		<input type="submit" value="Post" />
 	</form>
-}, DimagiCGI::escape_attribute($name), DimagiCGI::escape_attribute($query));
+}, WhereIsCGI::escape_attribute($name), WhereIsCGI::escape_attribute($query));
 
 # Any errors in previous submission.
 foreach my $error (@errors) {
