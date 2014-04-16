@@ -1,0 +1,4 @@
+host: subdomain.domain.com
+database: database_name
+user: jenny
+password: password
